@@ -1,0 +1,14 @@
+{
+  "name": "wheres-grogu",
+  "version": "1.0.0",
+  "description": "A basic Netlify function configuration for a small Where's Waldo-esque team game",
+  "main": "index.js",
+  "scripts": {
+    "dev": "netlify functions:serve"
+  },
+  "author": "Liza Shulyayeva",
+  "license": "ISC",
+  "devDependencies": {
+    "netlify-cli": "^12.0.7"
+  }
+}

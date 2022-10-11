@@ -1,0 +1,16 @@
+[build]
+  command = "./build.sh"
+  functions = "functions"
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+
+[build.environment]
+  GO_IMPORT_PATH = "github.com/lazeratops/wheres-grogu"
+  GO111MODULE = "on"
+
+# Set enviroment variable prompts for templates
+[template.environment]
+  SLACK_GROGU_WEBHOOK_URL = "Your Grogu Slack webhook URL"
+
