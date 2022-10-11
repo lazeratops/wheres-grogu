@@ -80,7 +80,7 @@ func validateSignature(headers map[string]string, body string) error {
 	const errMsg = "unauthorized request"
 	fmt.Println("headers", headers)
 
-	if sig, ok := headers["X-Slack-Signature"]; ok {
+	if sig, ok := headers["x-slack-signature"]; ok {
 		slackSig = sig
 	} else {
 		return fmt.Errorf("%s: missing signature", errMsg)
@@ -90,7 +90,7 @@ func validateSignature(headers map[string]string, body string) error {
 		return fmt.Errorf("%s: invalid signature", errMsg)
 	}
 
-	if timestamp, ok := headers["X-Slack-Request-Timestamp"]; ok {
+	if timestamp, ok := headers["x-slack-request-timestamp"]; ok {
 		reqTimestamp = timestamp
 	} else {
 		return fmt.Errorf("%s: missing request timestamp", errMsg)
