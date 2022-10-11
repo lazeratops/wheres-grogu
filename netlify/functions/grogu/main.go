@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -17,8 +20,9 @@ type message struct {
 }
 
 const (
-	webhookEndpointKey = "SLACK_GROGU_WEBHOOK_URL"
-	slackMessageText   = "Din Djarin has been awarded!"
+	keyWebhookEndpint     = "SLACK_GROGU_WEBHOOK_URL"
+	keySlackSigningSecret = "SLACK_SIGNING_SECRET"
+	slackMessageText      = "Din Djarin has been awarded!"
 )
 
 func main() {
@@ -27,11 +31,17 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// TODO: do some kind of auth handling, make sure only
-	// permitted person can use this webhook.
+	webhookEndpoint := os.Getenv(keyWebhookEndpint)
+	slackSigningSecret := os.Getenv(keySlackSigningSecret)
+	if webhookEndpoint == "" || slackSigningSecret == "" {
+		return nil, errors.New("function not configured; missing critical env variables")
+	}
+
+	if err := validateSignature(request.Headers, request.Body); err != nil {
+		return nil, err
+	}
 
 	// Make the actual HTTP request to Slack
-	webhookEndpoint := os.Getenv(webhookEndpointKey)
 	msg := message{Text: slackMessageText}
 	jsonData, err := json.Marshal(msg)
 	if err != nil {
@@ -62,4 +72,40 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 		StatusCode: http.StatusOK,
 	}, nil
 
+}
+
+func validateSignature(headers map[string]string, body string) error {
+	var slackSig, reqTimestamp string
+
+	const errMsg = "unauthorized request"
+	fmt.Println("headers", headers)
+
+	if sig, ok := headers["X-Slack-Signature"]; ok {
+		slackSig = sig
+	} else {
+		return fmt.Errorf("%s: missing signature", errMsg)
+	}
+	// Check if the key had an empty value just in case
+	if slackSig == "" {
+		return fmt.Errorf("%s: invalid signature", errMsg)
+	}
+
+	if timestamp, ok := headers["X-Slack-Request-Timestamp"]; ok {
+		reqTimestamp = timestamp
+	} else {
+		return fmt.Errorf("%s: missing request timestamp", errMsg)
+	}
+
+	vNumber := getVersionNumber(reqTimestamp, body)
+	sig := hmac.New(sha256.New, []byte(slackSig))
+	sig.Write([]byte(vNumber))
+	sSig := string(sig.Sum(nil))
+	if sSig == slackSig {
+		return nil
+	}
+	return errors.New("failed to validate given auth signature")
+}
+
+func getVersionNumber(timestamp string, body string) string {
+	return fmt.Sprintf("v0:%s:%s", timestamp, body)
 }
