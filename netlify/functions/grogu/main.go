@@ -37,7 +37,7 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	if webhookEndpoint == "" || slackSigningSecret == "" {
 		return nil, errors.New("function not configured; missing critical env variables")
 	}
-
+	fmt.Println("request body", request.Body, request.Path)
 	if err := validateSignature(request.Headers, request.Body); err != nil {
 		return nil, err
 	}
@@ -98,6 +98,7 @@ func validateSignature(headers map[string]string, body string) error {
 	}
 
 	vNumber := getVersionNumber(reqTimestamp, body)
+	fmt.Println("versionNumber:", vNumber)
 	sig := hmac.New(sha256.New, []byte(slackSig))
 	sig.Write([]byte(vNumber))
 	sSig := base64.StdEncoding.EncodeToString(sig.Sum(nil))
