@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,7 +37,6 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	if webhookEndpoint == "" || slackSigningSecret == "" {
 		return nil, errors.New("function not configured; missing critical env variables")
 	}
-	fmt.Println("request body", request.Body, request.Path)
 	if err := validateSignature(request.Headers, request.Body, slackSigningSecret); err != nil {
 		return nil, err
 	}
@@ -78,8 +77,6 @@ func validateSignature(headers map[string]string, body string, signingSecret str
 	var slackSig, reqTimestamp string
 
 	const errMsg = "unauthorized request"
-	fmt.Println("headers", headers)
-
 	if sig, ok := headers["x-slack-signature"]; ok {
 		slackSig = sig
 	} else {
@@ -97,7 +94,6 @@ func validateSignature(headers map[string]string, body string, signingSecret str
 	}
 
 	version := getVersion(reqTimestamp, body)
-	fmt.Println("versionNumber:", version)
 	sig := computeSig(version, signingSecret)
 	if hmac.Equal([]byte(sig), []byte(slackSig)) {
 		return nil
@@ -112,5 +108,5 @@ func getVersion(timestamp string, body string) string {
 func computeSig(version, signingSecret string) string {
 	sig := hmac.New(sha256.New, []byte(signingSecret))
 	sig.Write([]byte(version))
-	return fmt.Sprintf("v0=%s", base64.StdEncoding.EncodeToString(sig.Sum(nil)))
+	return fmt.Sprintf("v0=%s", hex.EncodeToString(sig.Sum(nil)))
 }
