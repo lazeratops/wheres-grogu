@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,7 +100,7 @@ func validateSignature(headers map[string]string, body string) error {
 	vNumber := getVersionNumber(reqTimestamp, body)
 	sig := hmac.New(sha256.New, []byte(slackSig))
 	sig.Write([]byte(vNumber))
-	sSig := string(sig.Sum(nil))
+	sSig := base64.StdEncoding.EncodeToString(sig.Sum(nil))
 	if sSig == slackSig {
 		return nil
 	}
