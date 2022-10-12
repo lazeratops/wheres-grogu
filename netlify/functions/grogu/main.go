@@ -38,7 +38,7 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 		return nil, errors.New("function not configured; missing critical env variables")
 	}
 	fmt.Println("request body", request.Body, request.Path)
-	if err := validateSignature(request.Headers, request.Body); err != nil {
+	if err := validateSignature(request.Headers, request.Body, slackSigningSecret); err != nil {
 		return nil, err
 	}
 
@@ -72,10 +72,9 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 	}, nil
-
 }
 
-func validateSignature(headers map[string]string, body string) error {
+func validateSignature(headers map[string]string, body string, signingSecret string) error {
 	var slackSig, reqTimestamp string
 
 	const errMsg = "unauthorized request"
@@ -97,17 +96,21 @@ func validateSignature(headers map[string]string, body string) error {
 		return fmt.Errorf("%s: missing request timestamp", errMsg)
 	}
 
-	vNumber := getVersionNumber(reqTimestamp, body)
-	fmt.Println("versionNumber:", vNumber)
-	sig := hmac.New(sha256.New, []byte(slackSig))
-	sig.Write([]byte(vNumber))
-	sSig := base64.StdEncoding.EncodeToString(sig.Sum(nil))
-	if sSig == slackSig {
+	version := getVersion(reqTimestamp, body)
+	fmt.Println("versionNumber:", version)
+	sig := computeSig(version, signingSecret)
+	if hmac.Equal([]byte(sig), []byte(slackSig)) {
 		return nil
 	}
 	return errors.New("failed to validate given auth signature")
 }
 
-func getVersionNumber(timestamp string, body string) string {
+func getVersion(timestamp string, body string) string {
 	return fmt.Sprintf("v0:%s:%s", timestamp, body)
+}
+
+func computeSig(version, signingSecret string) string {
+	sig := hmac.New(sha256.New, []byte(signingSecret))
+	sig.Write([]byte(version))
+	return fmt.Sprintf("v0=%s", base64.StdEncoding.EncodeToString(sig.Sum(nil)))
 }
