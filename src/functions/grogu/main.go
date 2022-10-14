@@ -43,7 +43,7 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	case "found":
 		slackMsgText = msgFound
 		break
-	case "notfound":
+	case "oopsnotfound":
 		slackMsgText = msgNotFound
 		break
 	case "onthemove":
