@@ -1,5 +1,5 @@
 [functions]
-  directory = "netlify/functions"
+  directory = "src/functions"
 
 [build.environment]
   GO_IMPORT_PATH = "github.com/lazeratops/wheres-grogu"
