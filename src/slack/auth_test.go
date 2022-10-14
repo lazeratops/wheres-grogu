@@ -1,8 +1,7 @@
-package main
+package slack
 
 import (
 	"github.com/stretchr/testify/require"
-	"net/http"
 	"testing"
 )
 
@@ -40,25 +39,4 @@ func TestCompareSignature(t *testing.T) {
 	gotSig := computeSig(version, signingSecret)
 	wantSig := "v0=a2114d57b48eac39b9ad189dd8316235a7b4a8d21a10bd27519666489c69b503"
 	require.EqualValues(t, wantSig, gotSig)
-}
-
-// This test function is simply for local testing,
-// do not try to use it as a unit test.
-func TestNetlifyDev(t *testing.T) {
-	// Uncomment this line when testing locally
-	t.Skip()
-	// This is intended to be run alongside `npm run dev`
-	const url = `http://localhost:9999/.netlify/functions/grogu?token=23424&command=grogu`
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		require.NoError(t, err)
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("X-Slack-Signature", "testsig")
-	req.Header.Set("X-Slack-Request-Timestamp", "234")
-
-	res, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	require.EqualValues(t, http.StatusOK, res.StatusCode)
 }
