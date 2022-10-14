@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -27,13 +26,10 @@ func main() {
 
 func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// Get "text" param from body
-	var body map[string]interface{}
-	if err := json.Unmarshal([]byte(request.Body), &body); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal request body (%s): %w", request.Body, err)
-	}
+	fmt.Println("query str:", request.QueryStringParameters)
 	var cmdParam string
-	if t, ok := body["text"]; ok {
-		cmdParam = t.(string)
+	if t, ok := request.QueryStringParameters["text"]; ok {
+		cmdParam = t
 	} else {
 		return resBadParam, nil
 	}
