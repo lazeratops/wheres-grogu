@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/lazeratops/wheres-grogu/src/slack"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -25,15 +26,13 @@ func main() {
 }
 
 func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// Get "text" param from body
-	fmt.Println("query str:", request.QueryStringParameters)
-	var cmdParam string
-	if t, ok := request.QueryStringParameters["text"]; ok {
-		cmdParam = t
-	} else {
-		return resBadParam, nil
+	fmt.Println("query str:", request.Body)
+	q, err := url.ParseQuery(request.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse query: %w", err)
 	}
-
+	fmt.Println("q:", q)
+	cmdParam := q.Get("text")
 	var slackMsgText string
 	switch cmdParam {
 	case "found":
